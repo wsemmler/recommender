@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css">
+  
+  <title>Little Library Dashboard</title>
+
+  <style>
+    body {
+      background-color: #f5f5f5;
+    }
+
+    .dashboard-panel {
+      width: 900px;
+      max-width: 90%;
+      height: 2000px;             /* fixed dashboard height */
+      background-color: #fff;
+      border-radius: 40px;
+      padding: 20px;
+      position: relative;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .dashboard-wrapper {
+    transform: scale(0.9);      /* 80% size */
+    transform-origin: top center; /* shrink from top center */
+    width: 100%;                 /* ensure it still centers */
+    margin: 0 auto;
+    }
+
+    .dashboard-divider {
+    border: none;                   /* remove default hr style */
+    height: 4px;                     /* thickness */
+    background-color: #f7f8fa;       /* dark color like navbar */
+    margin: 30px 0;                  /* space above and below */
+    border-radius: 2px;              /* optional rounded edges */
+    }
+
+    /* Scrollable content areas */
+    #books-list-container,
+    #recommendations-container {
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    #books-list,
+    #recommendations {
+      margin-top: 5px;
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    #books-list .col-md-3,
+    #recommendations .col-md-3 {
+      margin-bottom: 40px;
+    }
+
+    .card {
+      border-radius: 10px;
+    }
+
+    .card-title.small {
+      font-size: 0.9rem;
+    }
+
+    .card-subtitle.small {
+      font-size: 0.8rem;
+    }
+
+    .card img {
+    max-height: 200px;  /* limit height */
+    width: auto;        /* maintain aspect ratio */
+    object-fit: cover;
+    object-position: top;
+    display: block;
+    margin: 0 auto;   /* crop if needed */
+    }
+
+    /* Section headers */
+    .section-header {
+    font-weight: bold;
+    font-size: 1.2rem;              /* bigger text */
+    color: #fff;                     /* white text */
+    background-color: #343a40;       /* dark navbar color */
+    padding: 6px 8px;              /* padding inside the bar */
+    position: sticky;                /* sticky at top of scroll container */
+    top: 0;                           /* stick to top */
+    z-index: 5;                       /* stay above content */
+    border-radius: 4px 4px 0 0;     /* optional rounded top corners */
+    margin-bottom: 5px;
+}
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">    
+      <a class="navbar-brand" href="#">Little Library</a>
+    </div>
+  </nav>
+
+  <!-- Dashboard Panel -->
+  <div class="d-flex justify-content-center mt-4 dashboard-wrapper">
+    <div class="dashboard-panel">
+
+      <!-- Search Card -->
+      <div class="card mb-2">
+        <div class="card-body">
+          <h5 class="card-title text-center">Search Books</h5>
+          <div class="input-group">
+            <input type="text" class="form-control" placeholder="Type Author, Title, Category.." id="search-input">
+            <div class="input-group-append">
+              <button class="btn btn-dark" type="button" id="search-button">Search</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Books List Scrollable -->
+      <div id="books-list-container" class="mb-2">
+        <div class="section-header">Books</div>
+        <div id="books-list" class="row"></div>
+      </div>
+
+      <!-- Thick Divider -->
+      <div class="dashboard-divider"></div>
+
+      <!-- Recommendations Scrollable -->
+      <div id="recommendations-container">
+        <div class="section-header">Recommendations</div>
+        <div id="recommendations" class="row"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal for Book Details -->
+  <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Book Details</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          ...
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- jQuery, Popper.js, Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js"></script>
+
+  <!-- Your existing script.js -->
+  <script src="js/script.js"></script>
+
+</body>
+</html>

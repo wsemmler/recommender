@@ -1,0 +1,13 @@
+numpy
+pandas
+requests
+flask
+torch
+transformers
+flask-cors
+sentence-transformers
+gunicorn==23.0.0
+scikit-learn
+tqdm
+
+
