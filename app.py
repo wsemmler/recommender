@@ -10,7 +10,7 @@ from sentence_transformers import SentenceTransformer, util
 
 app = Flask(__name__)
 CORS(app) 
-model = SentenceTransformer('paraphrase-MiniLM-L3-v2')
+model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
 
 def recommend_books(books, top_n=3):
     texts = [b['title'] + ' ' + b['categories'] for b in books]
@@ -51,10 +51,11 @@ def api_recommend():
     recs = recommend_books(books)
     return jsonify(recs)
 
-if __name__ == '__main__':
-    app.run(debug=True)
-
 # if __name__ == '__main__':
-#     import os
-#     port = int(os.environ.get("PORT", 5000))
-#     app.run(host="0.0.0.0", port=port)
+#     app.run(debug=True)
+
+import os
+
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
