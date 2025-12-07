@@ -1,13 +1,10 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  
-  <!-- Bootstrap CSS -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css">
-  
-  <title>Little Library Dashboard</title>
+  <title>Little Library</title>
 
   <style>
     body {
@@ -49,7 +46,7 @@
       flex: 1;
     }
 
-    #books-list,
+        #books-list,
     #recommendations {
       margin-top: 5px;
       display: flex;
@@ -58,7 +55,7 @@
 
     #books-list .col-md-3,
     #recommendations .col-md-3 {
-      margin-bottom: 40px;
+      margin-bottom: 5px;
     }
 
     .card {
@@ -94,12 +91,13 @@
     z-index: 5;                       /* stay above content */
     border-radius: 4px 4px 0 0;     /* optional rounded top corners */
     margin-bottom: 5px;
-}
+    }
+
   </style>
 </head>
 <body>
 
-  <!-- Navbar -->
+     <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">    
       <a class="navbar-brand" href="#">Little Library</a>
@@ -110,68 +108,59 @@
   <div class="d-flex justify-content-center mt-4 dashboard-wrapper">
     <div class="dashboard-panel">
 
-      <!-- Search Card -->
-      <div class="card mb-2">
+      <div class="card mb-3">
         <div class="card-body">
           <h5 class="card-title text-center">Search Books</h5>
           <div class="input-group">
-            <input type="text" class="form-control" placeholder="Type Author, Title, Category.." id="search-input">
+            <input id="search-input" type="text" class="form-control" placeholder="Type Author, Title, Category...">
             <div class="input-group-append">
-              <button class="btn btn-dark" type="button" id="search-button">Search</button>
+              <button id="search-button" class="btn btn-dark">Search</button>
             </div>
           </div>
+          <div id="status" class="mt-2 text-muted small">Model status: <span id="model-status">Loading USE...</span></div>
         </div>
       </div>
 
-      <!-- Books List Scrollable -->
-      <div id="books-list-container" class="mb-2">
+      <div>
         <div class="section-header">Books</div>
         <div id="books-list" class="row"></div>
       </div>
 
-      <!-- Thick Divider -->
-      <div class="dashboard-divider"></div>
+      <hr>
 
-      <!-- Recommendations Scrollable -->
-      <div id="recommendations-container">
+      <div>
         <div class="section-header">Recommendations</div>
         <div id="recommendations" class="row"></div>
       </div>
 
     </div>
+
+<!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-hidden="true">
+ <div class="modal-dialog modal-lg" role="document">
+  <div class="modal-content">
+   <div class="modal-header">
+    <h5 class="modal-title" id="modal-title">Book Details</h5>
+    <button type="button" class="close" data-dismiss="modal">&times;</button>
+   </div>
+   <div class="modal-body" id="modal-body">...</div>
+   <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+   </div>
   </div>
+ </div>
+</div>
 
-  <!-- Modal for Book Details -->
-  <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel">Book Details</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-          ...
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        </div>
-      </div>
-    </div>
-  </div>
+<!-- jQuery + Bootstrap -->
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js"></script>
 
-  <!-- jQuery, Popper.js, Bootstrap JS -->
-  <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js"></script>
-  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js"></script>
+<!-- TensorFlow.js + USE -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.11.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder@1.3.3/dist/universal-sentence-encoder.min.js"></script>
 
-  <!-- TensorFlow.js + USE -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.11.0/dist/tf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder@1.3.3/dist/universal-sentence-encoder.min.js"></script>
-
-  <!-- Your script -->
-  <script src="script.js"></script>
-
+<!-- Your script -->
+<script src="script.js"></script>
 </body>
 </html>
