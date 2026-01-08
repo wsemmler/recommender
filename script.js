@@ -1,16 +1,26 @@
 // Script.js
 // Search Books Function
+// script.js - pure front-end TF.js recommender
 
-
-
-// script.js - pure front-end TF.js recommender (no Flask)
-
-/* --------------------
-   Global state & load USE
-   -------------------- */
 let useModel = null;
-let rankingModel = null; // will be created per-query (lightweight)
-const EMB_DIM = 512;     // USE dimension
+let rankingModel = null; 
+const EMB_DIM = 512;     
+
+// Monitoring Elements
+function createMonitoringUI() {
+  if (!$('#monitoring-panel').length) {
+    $('body').prepend(`
+      <div id="monitoring-panel" style="position:fixed;top:0;right:0;background:#f8f9fa;border:1px solid #ddd;padding:10px;z-index:9999;font-size:12px;width:250px;">
+        <div><strong>Model Status</strong></div>
+        <div id="model-status">Not loaded</div>
+        <div id="ranking-status">Ranking model: N/A</div>
+        <div id="training-status">Training: N/A</div>
+        <div id="memory-status">Memory: N/A</div>
+      </div>
+    `);
+  }
+}
+createMonitoringUI();
 
 async function ensureUSE() {
   if (!useModel) {
@@ -21,26 +31,20 @@ async function ensureUSE() {
   return useModel;
 }
 
-/* --------------------
-   PRELOAD USE ON PAGE LOAD
-   -------------------- */
-window.addEventListener('load', () => {
-  ensureUSE().catch(err => {
-    console.error('Failed to load USE:', err);
-    document.getElementById('model-status').innerText = 'Failed to load USE';
-  });
-});
+// PRELOAD ON PAGE LOAD
 
-/* --------------------
-   Helper: build small ranking model
-   Input features: concat(queryEmb, itemEmb, |diff|, prod) => dense => score
-   -------------------- */
+// window.addEventListener('load', () => {
+//   ensureUSE().catch(err => {
+//     console.error('Failed to load USE:', err);
+//     document.getElementById('model-status').innerText = 'Failed to load USE';
+//   });
+// });
+
+// build ranking 
 function buildRankingModel() {
-  // Input shape: [featureDim], where featureDim = 4 * EMB_DIM
   const featureDim = EMB_DIM * 4;
   const input = tf.input({ shape: [featureDim] });
 
-  // Small network
   let x = tf.layers.dense({ units: 256, activation: 'relu' }).apply(input);
   x = tf.layers.dropout({ rate: 0.2 }).apply(x);
   x = tf.layers.dense({ units: 64, activation: 'relu' }).apply(x);
@@ -49,79 +53,69 @@ function buildRankingModel() {
 
   const m = tf.model({ inputs: input, outputs: out });
   m.compile({ optimizer: tf.train.adam(0.01), loss: 'binaryCrossentropy' });
+  $('#ranking-status').text(`Ranking model built. Layers: ${m.layers.length}`);
   return m;
 }
 
-/* --------------------
-   Create features for each item using query & item embeddings
-   features = concat(query, item, abs(query - item), query * item)
-   -------------------- */
+// Create features 
 function makeFeatures(queryEmbTensor, itemEmbTensor) {
   return tf.tidy(() => {
-    // queryEmbTensor: [EMB_DIM]
-    // itemEmbTensor:   [N, EMB_DIM]
     const q = queryEmbTensor.reshape([1, EMB_DIM]);   // [1,512]
     const qTiled = q.tile([itemEmbTensor.shape[0], 1]); // [N,512]
-
     const absdiff = qTiled.sub(itemEmbTensor).abs(); // [N,512]
     const prod = qTiled.mul(itemEmbTensor);         // [N,512]
-
     return tf.concat([qTiled, itemEmbTensor, absdiff, prod], 1); // [N, 2048]
   });
 }
 
-/* --------------------
-   Main recommendation function (runs per query)
-   - Embeds query + items
-   - Creates features
-   - Creates rankingModel (fresh)
-   - Trains briefly with weak labels (use OpenLibrary rank as weak label)
-   - Predicts scores and returns ranked items
-   -------------------- */
+// Memory Monitor
+function updateMemoryStatus() {
+  const mem = tf.memory();
+  $('#memory-status').text(`Tensors: ${mem.numTensors}, Bytes: ${mem.numBytes}`);
+}
+setInterval(updateMemoryStatus, 2000);
+
+// Recommend Function
 async function recommendForQuery(query, rawBooks) {
   await ensureUSE();
 
-  // Build texts for embedding
   const itemTexts = rawBooks.map(b => `${b.title} ${b.categories || ''} ${b.author || ''}`);
   const queryText = query;
 
-  // get embeddings
   const embeddings = await useModel.embed(itemTexts);    // [N, EMB_DIM]
   const queryEmb = await useModel.embed([queryText]);   // [1, EMB_DIM]
   const queryEmbVec = tf.squeeze(queryEmb, [0]);        // [EMB_DIM]
 
-  // Build features tensor
   const features = makeFeatures(queryEmbVec, embeddings); // [N, 4*EMB_DIM]
-
-  // Create weak labels:
-  // Use OpenLibrary ordering: treat the first item as positive (1), others 0.
-  // You can choose other heuristics (e.g., top-2 positives) depending on UX.
   const N = rawBooks.length;
   const labels = tf.tensor1d(rawBooks.map((_, i) => (i === 0 ? 1 : 0)), 'float32').reshape([N, 1]);
 
-  // Build or recreate a fresh ranking model for this query
   if (rankingModel) {
-    try { rankingModel.dispose(); } catch (e) { /*ignore*/ }
+    rankingModel.dispose();
+    rankingModel = null;
+    $('#ranking-status').text('Old ranking model disposed.');
   }
   rankingModel = buildRankingModel();
 
-  // Train briefly on the small set (fast). This lets the network learn a query-aware ranking function.
-  // Note: we train for a few epochs — this is tiny (N ~ 10) so it's quick.
-  // Wrap tensors in tidy to prevent leaks; but keep features/labels for training.
   await rankingModel.fit(features, labels, {
     epochs: 5,           // small number; adjust for speed/quality
     batchSize: Math.min(6, N),
-    verbose: 0
+    verbose: 0,
+    callbacks: {
+      onEpochEnd: (epoch, logs) => {
+        $('#training-status').text(`Epoch ${epoch + 1}: loss=${logs.loss.toFixed(4)}`);
+      },
+      onTrainEnd: () => {
+        $('#training-status').text('Training done');
+      }
+    }
   });
 
-  // Predict scores
   const pred = rankingModel.predict(features); // [N,1]
   const scores = await pred.data();
-
-  // Clean up tensors we created (embeddings and queryEmb are managed by USE)
+  console.log('Predicted scores:', scores);
   tf.dispose([embeddings, queryEmb, features, labels, pred, queryEmbVec]);
 
-  // Merge scores with books and return ranked list
   const results = rawBooks.map((b, i) => ({ ...b, score: scores[i] }));
   results.sort((a, b) => b.score - a.score);
   return results;
@@ -162,7 +156,6 @@ function renderRecommendations(recs) {
     return;
   }
   recs.forEach((b) => {
-    // we will search OpenLibrary to get the full doc for cover/author/year (similar to original)
     $.ajax({
       url: 'https://openlibrary.org/search.json',
       type: 'GET',
@@ -216,10 +209,8 @@ async function searchBooks() {
       return;
     }
 
-    // show raw results
     renderBooks(res.docs);
 
-    // Build a simple cleaned book array for embedding
     const booksForModel = res.docs.map(d => ({
       title: d.title,
       author: d.author_name ? d.author_name.join(', ') : 'Unknown',
@@ -229,11 +220,9 @@ async function searchBooks() {
     }));
 
     $('#status').text('Computing embeddings and ranking...');
-    // Recommend using TF.js deep model (query-aware)
     const ranked = await recommendForQuery(q, booksForModel);
 
-    // Show top 4 recommended items
-    renderRecommendations(ranked.slice(0, 4));
+    renderRecommendations(ranked.slice(0, 8));
     $('#status').text('Done');
 
   } catch (err) {
@@ -243,9 +232,7 @@ async function searchBooks() {
   }
 }
 
-/* --------------------
-   Modal detail handler (fetch work details)
-   -------------------- */
+// Modal detail handler (fetch work details)
 $('#books-list, #recommendations').on('click', '.see-detail', function (e) {
   e.preventDefault();
   const workKey = $(this).data('key');
@@ -295,27 +282,31 @@ $('#books-list, #recommendations').on('click', '.see-detail', function (e) {
   });
 });
 
-/* --------------------
-   Utilities
-   -------------------- */
+// Utilities
 function escapeHtml(unsafe) {
   return (unsafe + '').replace(/[&<"'>]/g, function (m) {
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m];
   });
 }
 
-/* --------------------
-   Bindings
-   -------------------- */
+// Bindings
 $('#search-button').on('click', searchBooks);
 $('#search-input').on('keyup', function(e) { if (e.which === 13) searchBooks(); });
 
-/* --------------------
-   Initial: preload USE to improve first-run latency
-   -------------------- */
-ensureUSE().catch(err => {
-  console.error('Failed to load USE:', err);
-  document.getElementById('model-status').innerText = 'Failed to load USE';
+// Initial: preload USE to improve first-run latency
+$('button[data-toggle="pill"]').on('shown.bs.tab', async function (e) {
+  const targetId = $(e.target).data('target');
+  if (targetId === '#books-content' && !useLoaded) {
+    try {
+      document.getElementById('model-status').innerText = 'Loading USE...';
+      await ensureUSE();
+      useLoaded = true;
+      document.getElementById('model-status').innerText = 'USE loaded';
+    } catch (err) {
+      console.error('Failed to load USE:', err);
+      document.getElementById('model-status').innerText = 'Failed to load USE';
+    }
+  }
 });
 
 // End of script.js
